@@ -147,7 +147,9 @@ Datei: toque-kuerbissuppe.json · geprüft ✓ · [an den Roboter gesendet ✓ /
 Alle umgerechneten Einstellungen fragt Toque vor dem ersten Start einmal zur Bestätigung ab.
 ```
 
-Nur echte Änderungen auflisten, nicht jede 1:1-Übernahme.
+Nur echte Änderungen auflisten, nicht jede 1:1-Übernahme. Nicht mit einer Frage oder einem
+Angebot enden („Hast du einen Smart?“): getroffene Annahmen stehen schon in der Liste, der
+Nutzer meldet sich, wenn etwas nicht passt.
 
 ## Rechtliches, kurz
 
