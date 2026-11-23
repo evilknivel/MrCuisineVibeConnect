@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: klassisches-gulasch-fuer-smart
+expected_outcome: |
+  File passes toque_check.py --robot smart. Onions chopped by machine; meat browned with rissoler or manual (≤14 min per rissoler step, or split); 2.5 h braising either as mijoter (Smart, ≤8h, 60–100 °C) or split manual steps ≤99 min with reverse and speed ≤3; quantity note about bowl capacity is optional; no questions.

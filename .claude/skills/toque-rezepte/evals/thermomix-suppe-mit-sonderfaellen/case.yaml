@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: thermomix-suppe-mit-sonderfaellen
+expected_outcome: |
+  A toque-recettes-1 file for one recipe that passes toque_check.py for the Connect; 98 °C becomes 95 °C, the 90 °C/Stufe 4 step is reduced to Stufe 3 (or split), puree step has no temperature, machine steps carry needsReview, MC terms instead of Mixtopf; no questions to the user; short German summary listing the changes.

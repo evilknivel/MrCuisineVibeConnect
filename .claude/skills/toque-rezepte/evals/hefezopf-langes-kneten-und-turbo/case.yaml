@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: hefezopf-langes-kneten-und-turbo
+expected_outcome: |
+  File passes toque_check.py (Connect). 40 °C becomes 37 °C; 4 min kneading split into petrir steps of at most 120 s; turbo with pulses 3; whipping with whisk at speed ≤4 (3); proofing and baking as text steps without machine; no questions.
