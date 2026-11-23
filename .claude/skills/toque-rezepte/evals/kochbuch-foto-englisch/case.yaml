@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: kochbuch-foto-englisch
+expected_outcome: |
+  The tomato-lentil soup is converted from the photo into a toque-recettes-1 file that passes toque_check.py (Connect): cups/oz converted to grams (lentils ~140-150 g, stock ~960 g, tomatoes ~400 g), stovetop steps become machine steps (sauté at 120 °C, simmer ~100 °C, puree without heat), the 'do not boil' reheat uses at most 95 °C, and the cut-off soda bread recipe is either left out and mentioned, or completed with its additions marked; no questions.
+context:
+  scaffold_script: place-files.sh

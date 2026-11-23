@@ -1,6 +1,6 @@
 ---
 name: toque-rezepte
-description: Rezepte für Toque (die freie App für den Lidl Monsieur Cuisine Connect/Smart) übernehmen – vor allem Thermomix-Rezepte (TM31/TM5/TM6/TM7, Cookidoo, Rezeptwelt, Thermomix-Blogs, Kochbücher), aber auch normale Rezepte (Chefkoch, Blogs, Fotos, Screenshots, PDFs, abgetippter Text) und Rezepte anderer Küchenmaschinen. Erzeugt eine geprüfte Datei im Format toque-recettes-1 mit Maschinenschritten (Zeit, Temperatur, Stufe, Linkslauf, Rühraufsatz, Kneten, Dampfgaren, Anbraten, Turbo), die die Sicherheitsregeln von Toque einhält, und schickt sie auf Wunsch direkt an den Rezept-Server des Roboters. Immer verwenden, wenn jemand ein Rezept „für Toque“, „für den Monsieur Cuisine“, „für meinen MC“ oder „für den Lidl-Thermomix“ umwandeln, übernehmen, importieren, anpassen oder anlegen will, oder ein Thermomix-Rezept auf einer anderen Maschine kochen möchte – auch wenn Toque nicht ausdrücklich genannt wird. Nicht für das Eintragen auf monsieur-cuisine.com (dafür gibt es einen eigenen Skill).
+description: "Rezepte für Toque (freie App für den Lidl Monsieur Cuisine Connect/Smart) aus jeder Quelle übernehmen: Thermomix (Cookidoo, Rezeptwelt, TM-Bücher), andere Küchenmaschinen, normale Herd-/Ofen-Rezepte, Fotos und Scans aus Kochbüchern und Zeitschriften (auch mehrseitig oder handschriftlich), Links, PDFs, KI- und Deep-Research-Rezepte, oder ein neu zu erfindendes Gericht. Ergänzt und recherchiert Lücken selbst, rechnet Cups/oz/°F um, prüft Plausibilität, plant das Rezept für den Roboter und erzeugt eine geprüfte toque-recettes-1-Datei, die Toques Sicherheitsregeln einhält; sendet sie auf Wunsch an den Rezept-Server. Immer verwenden, wenn jemand ein Rezept für Toque, den Monsieur Cuisine, „meinen MC“ oder den Lidl-Thermomix umwandeln, abfotografieren, anpassen, erfinden oder importieren will – auch ohne das Wort Toque. Nicht für Einträge auf monsieur-cuisine.com."
 ---
 
 # Rezepte für Toque übernehmen
@@ -17,25 +17,37 @@ in der Zusammenfassung sieht und am Roboter vor dem ersten Start ohnehin bestät
 
 ## Ablauf
 
-1. **Quelle lesen.** Text, Foto/Screenshot (selbst lesen), PDF, URL (abrufen). Mehrere Rezepte
-   auf einmal sind normal: alle in dieselbe Datei.
-2. **Robotermodell festlegen** (Standard: Connect, siehe *Annahmen*).
-3. **Umrechnen** nach den Regeln unten. Für Thermomix-Notation zuerst
-   `references/thermomix.md` lesen – dort stehen alle Schreibweisen (DE/EN/FR/IT/ES), die
-   Umrechnungstabelle und die Sonderfälle. Für normale Rezepte ohne Maschine
-   `references/klassische-rezepte.md`. Für das JSON-Format `references/format.md`.
-4. **Datei schreiben** als `toque-<kurzname>.json` (bei mehreren Rezepten
+1. **Quelle lesen und einordnen.** Jede Form ist erlaubt: Text, Fotos/Scans (selbst lesen, alle
+   Bilder zuerst ansehen), PDF, URL (abrufen), Video-Beschreibung, KI-Text, Deep-Research-Bericht,
+   oder nur ein Wunschgericht. Mehrere Rezepte auf einmal sind normal: alle in dieselbe Datei.
+   Welche Referenz gilt:
+   - Thermomix oder andere Küchenmaschine → `references/thermomix.md`
+   - normales Rezept (Herd, Ofen, Pfanne) → `references/klassische-rezepte.md`
+   - Foto/Scan, KI-/Deep-Research-Text, Link, Video, „erfinde ein Rezept“, Lücken in der Quelle →
+     zusätzlich `references/quellen-und-recherche.md`
+2. **Vervollständigen.** Fehlende oder unleserliche Mengen, Zeiten, Temperaturen und unbekannte
+   Begriffe selbst ergänzen; wenn es für das Gelingen wichtig ist und Websuche verfügbar ist,
+   kurz recherchieren (Regeln in `quellen-und-recherche.md` §5). Einheiten mit
+   `scripts/units.py` umrechnen (Cups, EL/TL, oz, lb, Sticks, °F, Gas Mark, alte Angaben).
+3. **Plausibilität prüfen** mit `references/plausibilitaet.md` (Verhältnisse, Garzeiten,
+   Kerntemperaturen, Mengen pro Durchgang). Lese- und KI-Fehler korrigieren und vermerken.
+4. **Robotermodell festlegen** (Standard: Connect, siehe *Annahmen*).
+5. **Für den Roboter planen und umrechnen** nach den Kernregeln unten und der passenden
+   Referenz. Klassische Rezepte neu ordnen (ein Topf statt Topf+Pfanne+Schüssel), Ofen/Pfanne
+   als Text-Schritte. JSON-Format: `references/format.md`.
+6. **Datei schreiben** als `toque-<kurzname>.json` (bei mehreren Rezepten
    `toque-rezepte-<datum>.json`), immer im Dateiformat mit `"format": "toque-recettes-1"`.
-5. **Prüfen** mit dem Skript – es bildet die Regeln von Toque nach und repariert nichts
+7. **Prüfen** mit dem Skript – es bildet die Regeln von Toque nach und repariert nichts
    stillschweigend:
    ```bash
    python3 <skill-dir>/scripts/toque_check.py toque-xyz.json --robot connect
    ```
    Fehler beheben und erneut prüfen, bis `OK` kommt. Warnungen lesen und, wo sinnvoll, im
    Schritttext oder in `notes` berücksichtigen.
-6. **Ausliefern** (siehe *Ausliefern*): Datei an den Nutzer geben; wenn Adresse und Schlüssel
+8. **Ausliefern** (siehe *Ausliefern*): Datei an den Nutzer geben; wenn Adresse und Schlüssel
    des Rezept-Servers bekannt sind und der Roboter erreichbar ist, direkt importieren.
-7. **Kurze Zusammenfassung** (Format unten).
+9. **Kurze Zusammenfassung** (Format unten), inklusive allem, was ergänzt, recherchiert oder
+   korrigiert wurde.
 
 ## Annahmen statt Rückfragen
 
@@ -54,11 +66,16 @@ Triff diese Entscheidungen selbst und nenne sie in der Zusammenfassung:
 | Nicht übertragbare Funktion (z. B. TM-Waage-Tara, „Gerät aufheizen lassen“, Cookidoo-Guided-Funktion) | Als normalen Text-Schritt ohne Maschine, oder mit dem nächsten passenden Programm, und Hinweis in `notes`. |
 | Quelle unvollständig/unleserlich | Fehlendes plausibel ergänzen und mit „(ergänzt)“ im Schritttext oder in `notes` markieren. |
 | Bild/Foto des Gerichts | Nicht übernehmen (`image` leer lassen). |
+| Mehrere Varianten (KI-Bericht, Zeitschrift) | Die empfohlene bzw. klassischste nehmen, Alternativen kurz in `notes`. |
+| Fehlende Menge/Zeit/Temperatur | Ergänzen bzw. recherchieren, in `notes` unter „Ergänzt“/„Recherchiert“ vermerken. |
+| Unleserliche Stelle auf Foto | Aus Zusammenhang und Plausibilität erschließen und vermerken; angeschnittene Rezepte, die sich nicht sicher ergänzen lassen, weglassen und nennen. |
+| Nur ein Gerichtname | Bewährtes klassisches Rezept selbst schreiben, für den Roboter geplant; Tag `ki-rezept`. |
+| Imperiale Einheiten | In g/ml/°C umrechnen (`scripts/units.py`), Originalangabe nicht mitschreiben. |
 
 **Echte Rückfragen nur**, wenn ohne sie gar nichts Sinnvolles entsteht: das Rezept selbst fehlt
 (z. B. nur ein Cookidoo-Link, der ohne Login nicht lesbar ist → um den kopierten Text oder
 Screenshots bitten), oder die Quelle ist so unleserlich, dass kein Rezept erkennbar ist. Alles
-andere entscheidest du.
+andere entscheidest du – auch fehlende Mengen, unklare Begriffe und Varianten.
 
 ## Kernregeln der Umrechnung
 

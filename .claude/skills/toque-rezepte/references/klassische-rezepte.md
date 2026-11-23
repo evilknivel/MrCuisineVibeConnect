@@ -43,3 +43,49 @@ Formen, Füllen, Anrichten, Kühlen.
 
 Der Mixbehälter fasst 3 l (Flüssigkeit bei Stufe 10 bis ca. 2,5 kg). Rezepte für 8+ Personen mit
 viel Flüssigkeit: in `notes` „ggf. in zwei Durchgängen“. Nicht von selbst halbieren.
+
+## Herd-Sprache übersetzen
+
+| Im Rezept | Toque |
+|---|---|
+| „bei schwacher Hitze“ | 80–90 °C |
+| „bei mittlerer Hitze“ | 100–110 °C (Dünsten, Köcheln) |
+| „bei starker Hitze“ / „scharf“ | 120–130 °C oder `rissoler` |
+| „aufkochen lassen“ | 100 °C, Stufe 1; Zeit nach Menge: bis 500 ml ≈ 4–5 min, 1 l ≈ 8–10 min, 2 l ≈ 14–16 min |
+| „köcheln“, „simmern“ | 95–100 °C, Stufe 1 |
+| „ziehen lassen“, „pochieren“ | 80–90 °C, Stufe 1 Linkslauf (oder ohne Maschine) |
+| „schmelzen“ | 50–60 °C, Stufe 2 |
+| „glasig dünsten“, „anschwitzen“ | 120 °C, 3 min, Stufe 1 |
+| „goldbraun anbraten“, „Röstaromen“ | `rissoler` (max. 14 min je Schritt, ≤ 500 g Fleisch je Durchgang) |
+| „unter Rühren“ | Stufe 1–2 (Stücke: Linkslauf) |
+| „ständig rühren“ (Saucen, Pudding) | Stufe 3 |
+| „zugedeckt“ | Messbecher einsetzen |
+| „offen“, „einreduzieren“ | ohne Messbecher, Garkorb als Spritzschutz auf den Deckel, 110–120 °C |
+| „unterheben“ | Stufe 1–2 Linkslauf, wenige Sekunden, oder von Hand (Text) |
+| „verquirlen“ | 10–20 s Stufe 4 |
+| „cremig rühren“ | Rühraufsatz, Stufe 3–4, 2–3 min |
+
+## Ein klassisches Rezept für den Roboter planen
+
+Klassische Rezepte setzen Topf, Pfanne, Schneidebrett und Rührschüssel parallel ein. Der
+Roboter hat einen Topf. Deshalb das Rezept neu ordnen, ohne das Ergebnis zu verändern:
+
+1. **Trocken vor nass, fein vor grob:** zuerst trocken zerkleinern (Nüsse, Parmesan, Zucker,
+   Kräuter, Brot), umfüllen; dann Zwiebeln/Gemüse; dann Garen. So muss der Topf
+   zwischendurch nicht gespült werden. Wo doch nötig, einen Text-Schritt „Mixbehälter ausspülen“.
+2. **Süß und herzhaft trennen**, Teige vor Füllungen mit Zwiebel.
+3. **Was der Roboter schlechter kann, bleibt Text:** knusprig Braten (Schnitzel, Bratkartoffeln),
+   große Fleischstücke (Braten, ganze Hähnchenschenkel nur mit Dampf), Pasta für 4+ Personen,
+   Frittieren, Gratinieren, Backen, Grillen. Die Pfanne/der Ofen bekommt eigene Schritte –
+   parallel nutzbar, im Text sagen („währenddessen …“).
+4. **Mengen pro Durchgang** beachten (`plausibilitaet.md`): Fleisch anbraten in Portionen,
+   große Suppenmengen in zwei Durchgängen.
+5. **Garzeit beim Hinzufügen staffeln:** Zutaten mit langer Garzeit zuerst, empfindliche
+   (Erbsen, Spinat, Kräuter, Sahne) in einem späteren Schritt.
+6. **Stücke erhalten:** sobald stückige Zutaten im Topf sind, nur noch Linkslauf Stufe 1.
+7. **Andicken**: Stärke kalt anrühren (Text), zugeben, 2–3 min 100 °C Stufe 2–3.
+8. **Am Ende abschmecken** als Text-Schritt.
+
+Ein gutes Ergebnis hat meist 30–70 % Maschinenschritte. Ein Rezept mit 0 Maschinenschritten
+(z. B. Steak) trotzdem übernehmen, wenn der Nutzer es will – als reines Text-Rezept – und in der
+Zusammenfassung sagen, dass der Roboter hier nicht hilft.

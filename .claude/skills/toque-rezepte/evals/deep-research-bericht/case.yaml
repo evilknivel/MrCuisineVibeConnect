@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: deep-research-bericht
+expected_outcome: |
+  One bread recipe in a toque-recettes-1 file that passes toque_check.py (Connect): baker's percentages converted to grams (400 g wheat, 100 g rye, 200 g potatoes, water ~275 g, salt 11 g, yeast 7-8 g); caraway (Kümmel) appears in the ingredient list although the report only mentions it in the method; kneading as petrir steps of at most 120 s; potatoes cooked by steam or 100 °C machine step or text; baking as text; variants only in notes; no questions.

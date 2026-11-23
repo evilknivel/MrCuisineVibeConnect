@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: rezept-erfinden
+expected_outcome: |
+  A self-written dal recipe in a toque-recettes-1 file that passes toque_check.py (Connect): 4 servings, vegan (no dairy, no coconut milk), red lentils ~200-300 g, plausible liquid, mild spicing, machine steps for chopping, sautéing (~120 °C) and simmering (~100 °C, 15–25 min), tagged/noted as an untested AI recipe; no questions.
