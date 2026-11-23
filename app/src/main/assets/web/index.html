@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Toque</title>
+<style>
+:root{--bg:#f6f4f1;--card:#fff;--text:#1d1b19;--text2:#5d5853;--line:#e3ded8;--accent:#c2562b;--on:#fff;--warn:#b3261e;--ok:#2e7d32;--chip:#f0ebe5}
+@media (prefers-color-scheme:dark){:root{--bg:#161412;--card:#221f1c;--text:#f1ece6;--text2:#b5ada5;--line:#3a3530;--accent:#e2774a;--on:#1a120e;--warn:#f2b8b5;--ok:#8bd18f;--chip:#2c2824}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;gap:10px;align-items:center}
+header h1{font-size:18px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+main{max-width:900px;margin:0 auto;padding:16px}
+button,.btn{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:8px 14px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--on)}
+button.danger{color:var(--warn)}
+button.small{padding:4px 9px;font-size:14px}
+button:disabled{opacity:.5;cursor:default}
+input,select,textarea{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:100%}
+textarea{min-height:70px;resize:vertical}
+label{display:block;font-size:13px;color:var(--text2);margin:8px 0 3px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grow{flex:1;min-width:0}
+.tabs button{border-radius:20px}
+.tabs button.on{background:var(--chip);border-color:var(--accent)}
+.list a{display:flex;justify-content:space-between;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line);color:inherit;text-decoration:none}
+.list a:last-child{border-bottom:0}
+.muted{color:var(--text2);font-size:14px}
+.chip{display:inline-block;background:var(--chip);border-radius:12px;padding:1px 9px;font-size:13px;color:var(--text2)}
+.banner{border-radius:10px;padding:10px 14px;margin-bottom:14px;background:var(--chip)}
+.banner.warn{color:var(--warn)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0 10px}
+.ing{display:grid;grid-template-columns:70px 70px 1fr 1fr auto;gap:6px;margin-bottom:6px}
+.step{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
+.mach{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:0 8px}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:10px;display:none;max-width:90vw;z-index:9}
+ol.steps li{margin-bottom:10px}
+@media (max-width:600px){.ing{grid-template-columns:60px 60px 1fr auto}.ing .note{grid-column:1/-2}}
+</style>
+</head>
+<body>
+<header><h1 id="h">Toque</h1><span id="hbtn" class="row"></span></header>
+<main id="m"></main>
+<div id="toast"></div>
+<script>
+"use strict";
+var KEY = "", INFO = null, T = {}, state = {source: "user", q: ""};
+var $m = document.getElementById("m");
+
+function t(k) { return T[k] || k; }
+function el(tag, attrs, kids) {
+  var e = document.createElement(tag);
+  if (attrs) for (var a in attrs) {
+    var v = attrs[a];
+    if (v === null || v === undefined || v === false) continue;
+    if (a === "text") e.textContent = v;
+    else if (a.slice(0, 2) === "on") e.addEventListener(a.slice(2), v);
+    else if (a === "value") e.value = v;
+    else e.setAttribute(a, v === true ? "" : v);
+  }
+  (kids || []).forEach(function (k) { if (k !== null && k !== undefined) e.appendChild(typeof k === "string" ? document.createTextNode(k) : k); });
+  return e;
+}
+function toast(msg, bad) {
+  var d = document.getElementById("toast");
+  d.textContent = msg; d.style.display = "block"; d.style.background = bad ? "var(--warn)" : "";
+  clearTimeout(toast.t); toast.t = setTimeout(function () { d.style.display = "none"; }, 3500);
+}
+function store(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+function load(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
+
+function api(method, path, body, raw) {
+  var opt = {method: method, headers: {"Authorization": "Bearer " + KEY}};
+  if (body !== undefined) { opt.body = raw ? body : JSON.stringify(body); opt.headers["Content-Type"] = "application/json"; }
+  return fetch(path, opt).then(function (r) {
+    return r.text().then(function (txt) {
+      var data = null; try { data = txt ? JSON.parse(txt) : null; } catch (e) {}
+      if (!r.ok) {
+        var err = new Error((data && data.error) || (r.status + ""));
+        err.status = r.status; err.code = data && data.code; err.data = data; throw err;
+      }
+      return {data: data, text: txt};
+    });
+  }, function () { var e = new Error(t("offline")); e.status = 0; throw e; });
+}
+function fail(e) {
+  if (e.status === 401) { KEY = ""; store("toqueKey", null); return login(t("wrongKey")); }
+  toast(e.message, true);
+}
+function header(title, buttons) {
+  document.getElementById("h").textContent = title;
+  var hb = document.getElementById("hbtn"); hb.innerHTML = "";
+  (buttons || []).forEach(function (b) { hb.appendChild(b); });
+}
+function clear() { $m.innerHTML = ""; window.scrollTo(0, 0); }
+function busyBanner() {
+  return INFO && INFO.busy ? el("div", {class: "banner warn", text: t("robotBusy") + " (" + INFO.busy + ")"}) : null;
+}
+
+// ---------------------------------------------------------------- connexion
+function login(msg) {
+  header("Toque");
+  clear();
+  var input = el("input", {type: "text", autocomplete: "off", autocapitalize: "off", spellcheck: "false", value: KEY});
+  var go = function () { KEY = input.value.trim(); start(); };
+  $m.appendChild(el("div", {class: "card"}, [
+    el("h2", {text: T.connect ? t("connect") : "Toque"}),
+    msg ? el("p", {class: "banner warn", text: msg}) : null,
+    el("p", {class: "muted", text: T.keyHelp ? t("keyHelp") : "Réglages › Serveur de recettes"}),
+    el("label", {text: T.key ? t("key") : "Clé / Key"}), input,
+    el("p", {}, [el("button", {class: "primary", text: T.connect ? t("connect") : "OK", onclick: go})])
+  ]));
+  input.addEventListener("keydown", function (e) { if (e.key === "Enter") go(); });
+}
+
+function start() {
+  var m = /[#&]k=([a-z0-9]+)/.exec(location.hash);
+  if (m) { KEY = m[1]; history.replaceState(null, "", location.pathname); store("toqueKey", null); }
+  if (!KEY) KEY = load("toqueKey");
+  if (!KEY) return login();
+  api("GET", "/api/info").then(function (r) {
+    INFO = r.data; T = INFO.texts || {};
+    document.documentElement.lang = INFO.language || "fr";
+    document.title = t("title");
+    store("toqueKey", KEY);
+    route();
+  }).catch(function (e) {
+    if (e.status === 401) { KEY = ""; store("toqueKey", null); return login(T.wrongKey ? t("wrongKey") : "Clé refusée / Wrong key"); }
+    if (e.status === 429) return login(T.locked ? t("locked") : e.message);
+    login(e.message);
+  });
+}
+
+window.addEventListener("hashchange", function () { if (/[#&]k=/.test(location.hash)) { KEY = ""; INFO = null; start(); } else route(); });
+function go(h) { if (location.hash === h) route(); else location.hash = h; }
+function route() {
+  if (!INFO) return;
+  var h = location.hash.replace(/^#/, "");
+  var p = h.split("/");
+  if (p[0] === "r" && p[1]) return detail(decodeURIComponent(p[1]));
+  if (p[0] === "edit") return editor(p[1] ? decodeURIComponent(p[1]) : null);
+  if (p[0] === "settings") return settings();
+  list();
+}
+
+// ---------------------------------------------------------------- liste
+function list() {
+  header(t("title"), [
+    el("button", {class: "primary small", text: "+ " + t("new"), onclick: function () { go("#edit"); }}),
+    el("button", {class: "small", text: t("settings"), onclick: function () { go("#settings"); }})
+  ]);
+  clear();
+  var b = busyBanner(); if (b) $m.appendChild(b);
+  var q = el("input", {type: "search", placeholder: t("search"), value: state.q});
+  var tabs = el("div", {class: "row tabs"});
+  [["user", "mine"], ["lidl", "lidl"], ["community", "community"], ["all", "all"]].forEach(function (s) {
+    tabs.appendChild(el("button", {class: "small" + (state.source === s[0] ? " on" : ""), text: t(s[1]), onclick: function () { state.source = s[0]; list(); }}));
+  });
+  var box = el("div", {class: "list"});
+  var count = el("p", {class: "muted"});
+  $m.appendChild(el("div", {class: "card"}, [q, el("div", {style: "height:10px"}), tabs]));
+  $m.appendChild(el("div", {class: "card"}, [count, box]));
+  var timer = null;
+  function refresh() {
+    var path = "/api/recipes?limit=200&q=" + encodeURIComponent(state.q) + (state.source === "all" ? "" : "&source=" + state.source);
+    api("GET", path).then(function (r) {
+      box.innerHTML = "";
+      var rs = r.data.recipes;
+      count.textContent = rs.length ? rs.length + " / " + r.data.total : t("none");
+      rs.forEach(function (x) {
+        box.appendChild(el("a", {href: "#r/" + encodeURIComponent(x.id)}, [
+          el("span", {class: "grow"}, [x.title, x.category ? el("span", {class: "muted", text: " · " + x.category}) : null]),
+          el("span", {class: "chip", text: x.kind === "user" ? t("mine") : x.kind === "lidl" ? "Lidl" : t("community")})
+        ]));
+      });
+    }).catch(fail);
+  }
+  q.addEventListener("input", function () { state.q = q.value; clearTimeout(timer); timer = setTimeout(refresh, 250); });
+  refresh();
+}
+
+// ---------------------------------------------------------------- fiche
+function dur(s) { var m = Math.floor(s / 60), r = s % 60; return m + ":" + (r < 10 ? "0" : "") + r; }
+function progLabel(k) { var p = (INFO.programs || []).filter(function (x) { return x.key === k; })[0]; return p ? p.label : k; }
+function machineText(mc) {
+  var parts = [progLabel(mc.program)];
+  if (mc.program === "turbo") { if (mc.pulses) parts.push("× " + mc.pulses); }
+  else {
+    if (mc.seconds) parts.push(dur(mc.seconds));
+    if (mc.tempC) parts.push(mc.tempC + " °C");
+    if (mc.program === "manuel") parts.push(t("speed") + " " + mc.speed);
+    if (mc.reverse) parts.push(t("reverse"));
+    if (mc.accessory === "whisk") parts.push((INFO.accessories.filter(function (a) { return a.key === "whisk"; })[0] || {}).label || "whisk");
+  }
+  return parts.join(" · ");
+}
+
+function detail(id) {
+  clear();
+  api("GET", "/api/recipes/" + encodeURIComponent(id)).then(function (r) {
+    var x = r.data;
+    var buttons = [el("button", {class: "small", text: t("back"), onclick: function () { go("#"); }})];
+    header(x.title, buttons);
+    var b = busyBanner(); if (b) $m.appendChild(b);
+    var acts = el("div", {class: "row"});
+    if (x.editable) {
+      acts.appendChild(el("button", {class: "primary", text: t("edit"), onclick: function () { go("#edit/" + encodeURIComponent(x.id)); }}));
+      acts.appendChild(el("button", {class: "danger", text: t("delete"), onclick: function () {
+        if (!confirm(t("confirmDelete"))) return;
+        api("DELETE", "/api/recipes/" + encodeURIComponent(x.id)).then(function () { go("#"); }).catch(fail);
+      }}));
+    } else {
+      $m.appendChild(el("div", {class: "banner", text: t("readOnly")}));
+      acts.appendChild(el("button", {class: "primary", text: t("copy"), onclick: function () {
+        api("POST", "/api/recipes/" + encodeURIComponent(x.id) + "/copy").then(function (c) {
+          toast(t("saved")); go("#edit/" + encodeURIComponent(c.data.id));
+        }).catch(fail);
+      }}));
+    }
+    var meta = [];
+    if (x.servings) meta.push(x.servings + " " + t("servings"));
+    if (x.totalMinutes) meta.push(x.totalMinutes + " min");
+    if (x.category) meta.push(x.category);
+    $m.appendChild(el("div", {class: "card"}, [el("h2", {text: x.title, style: "margin-top:0"}), el("p", {class: "muted", text: meta.join(" · ")}), acts]));
+
+    // Ingrédients et liste de courses
+    var ing = el("div", {class: "card"}, [el("h3", {text: t("ingredients"), style: "margin-top:0"})]);
+    (x.ingredients || []).forEach(function (g) {
+      if (g.group) ing.appendChild(el("h4", {text: g.group}));
+      var ul = el("ul");
+      g.items.forEach(function (i) {
+        ul.appendChild(el("li", {text: [i.qty, i.unit, i.name].filter(Boolean).join(" ") + (i.note ? ", " + i.note : "")}));
+      });
+      ing.appendChild(ul);
+    });
+    if ((x.ingredients || []).length) {
+      var people = el("input", {type: "number", min: 1, max: 99, value: x.servings || "", style: "width:80px"});
+      var shopRow = el("div", {class: "row"}, [el("span", {class: "muted", text: t("servings")}), people]);
+      var srv = function () { return people.value ? "?servings=" + encodeURIComponent(people.value) : ""; };
+      if (INFO.bring) {
+        api("GET", "/api/bring").then(function (br) {
+          if (br.data.linked) shopRow.appendChild(el("button", {class: "primary", text: t("bring") + (br.data.listName ? " (" + br.data.listName + ")" : ""), onclick: function (ev) {
+            ev.target.disabled = true;
+            api("POST", "/api/recipes/" + encodeURIComponent(x.id) + "/bring" + srv()).then(function (a) {
+              toast(t("bringAdded") + " (" + a.data.added + ")");
+            }).catch(fail).then(function () { ev.target.disabled = false; });
+          }}));
+        }).catch(function () {});
+      }
+      shopRow.appendChild(el("button", {text: t("bringCopy"), onclick: function () {
+        api("GET", "/api/recipes/" + encodeURIComponent(x.id) + "/shopping" + srv()).then(function (s) { copyText(s.data.text); }).catch(fail);
+      }}));
+      ing.appendChild(shopRow);
+    }
+    $m.appendChild(ing);
+
+    var steps = el("ol", {class: "steps"});
+    (x.steps || []).forEach(function (s) {
+      steps.appendChild(el("li", {}, [s.text, s.machine ? el("div", {class: "chip", text: machineText(s.machine)}) : null,
+        s.weigh ? el("div", {class: "muted", text: "⚖ " + s.weigh.grams + " g " + (s.weigh.label || "")}) : null]));
+    });
+    $m.appendChild(el("div", {class: "card"}, [el("h3", {text: t("steps"), style: "margin-top:0"}), steps]));
+    if (x.notes) $m.appendChild(el("div", {class: "card"}, [el("h3", {text: t("notes"), style: "margin-top:0"}), el("p", {text: x.notes, style: "white-space:pre-wrap"})]));
+  }).catch(fail);
+}
+
+function copyText(text) {
+  // Page en http : l'API du presse-papiers n'est pas toujours là ; repli sur execCommand.
+  var done = function () { toast(t("copied")); };
+  if (navigator.share && window.isSecureContext) { navigator.share({text: text}).catch(function () {}); return; }
+  if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text).then(done, legacy); return; }
+  legacy();
+  function legacy() {
+    var ta = el("textarea", {value: text, style: "position:fixed;top:0;left:0;opacity:0"});
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    var ok = false; try { ok = document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(ta);
+    if (ok) done(); else prompt(t("bringCopy"), text);
+  }
+}
+
+// ---------------------------------------------------------------- édition
+function blank() { return {title: "", servings: 4, ingredients: [{group: "", items: []}], steps: []}; }
+
+function editor(id) {
+  clear();
+  var pending = id ? api("GET", "/api/recipes/" + encodeURIComponent(id)).then(function (r) {
+    if (!r.data.editable) { go("#r/" + encodeURIComponent(id)); throw {silent: true}; }
+    return r.data;
+  }) : Promise.resolve(blank());
+  pending.then(function (x) { form(id, x); }).catch(function (e) { if (!e.silent) fail(e); });
+}
+
+function num(v) { var n = parseInt(v, 10); return isNaN(n) ? 0 : n; }
+
+function form(id, x) {
+  if (!x.ingredients || !x.ingredients.length) x.ingredients = [{group: "", items: []}];
+  x.steps = x.steps || [];
+  header(id ? x.title : t("new"), [el("button", {class: "small", text: t("cancel"), onclick: function () { go(id ? "#r/" + encodeURIComponent(id) : "#"); }})]);
+  clear();
+  var b = busyBanner(); if (b) $m.appendChild(b);
+
+  function field(label, key, type, attrs) {
+    var i = el(type === "area" ? "textarea" : "input", Object.assign({type: type === "area" ? null : type, value: x[key] === undefined || x[key] === null ? "" : (Array.isArray(x[key]) ? x[key].join(", ") : x[key])}, attrs || {}));
+    i.addEventListener("input", function () {
+      if (type === "number") x[key] = num(i.value);
+      else if (key === "tags") x[key] = i.value.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+      else x[key] = i.value;
+    });
+    return el("div", {}, [el("label", {text: label}), i]);
+  }
+  $m.appendChild(el("div", {class: "card"}, [
+    field(t("recipeTitle"), "title", "text"),
+    el("div", {class: "grid"}, [field(t("servings"), "servings", "number", {min: 0}), field(t("prep"), "prepMinutes", "number", {min: 0}),
+      field(t("total"), "totalMinutes", "number", {min: 0}), field(t("difficulty"), "difficulty", "number", {min: 1, max: 3})]),
+    field(t("category"), "category", "text"), field(t("tags"), "tags", "text"), field(t("notes"), "notes", "area")
+  ]));
+
+  var ingCard = el("div", {class: "card"});
+  var stepCard = el("div", {class: "card"});
+  $m.appendChild(ingCard); $m.appendChild(stepCard);
+
+  function move(arr, i, d) { var j = i + d; if (j < 0 || j >= arr.length) return; var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp; }
+
+  function renderIng() {
+    ingCard.innerHTML = "";
+    ingCard.appendChild(el("h3", {text: t("ingredients"), style: "margin-top:0"}));
+    x.ingredients.forEach(function (g, gi) {
+      var gname = el("input", {type: "text", placeholder: t("group"), value: g.group || ""});
+      gname.addEventListener("input", function () { g.group = gname.value; });
+      ingCard.appendChild(el("div", {class: "row", style: "margin:10px 0 6px"}, [gname,
+        x.ingredients.length > 1 ? el("button", {class: "small danger", text: t("remove"), onclick: function () { x.ingredients.splice(gi, 1); renderIng(); }}) : null]));
+      g.items.forEach(function (it, ii) {
+        function inp(k, ph, cls) {
+          var i = el("input", {type: "text", placeholder: ph, value: it[k] || "", class: cls || null});
+          i.addEventListener("input", function () { it[k] = i.value; });
+          return i;
+        }
+        ingCard.appendChild(el("div", {class: "ing"}, [inp("qty", t("qty")), inp("unit", t("unit")), inp("name", t("name")), inp("note", t("note"), "note"),
+          el("button", {class: "small danger", text: "×", title: t("remove"), onclick: function () { g.items.splice(ii, 1); renderIng(); }})]));
+      });
+      ingCard.appendChild(el("button", {class: "small", text: "+ " + t("addIngredient"), onclick: function () { g.items.push({qty: "", unit: "", name: "", note: ""}); renderIng(); }}));
+    });
+    ingCard.appendChild(el("p", {}, [el("button", {class: "small", text: "+ " + t("addGroup"), onclick: function () { x.ingredients.push({group: "", items: []}); renderIng(); }})]));
+  }
+
+  function renderSteps() {
+    stepCard.innerHTML = "";
+    stepCard.appendChild(el("h3", {text: t("steps"), style: "margin-top:0"}));
+    x.steps.forEach(function (s, si) {
+      var box = el("div", {class: "step"});
+      var text = el("textarea", {value: s.text || ""});
+      text.addEventListener("input", function () { s.text = text.value; });
+      box.appendChild(el("div", {class: "row"}, [el("strong", {class: "grow", text: t("step") + " " + (si + 1)}),
+        el("button", {class: "small", text: "↑", title: t("up"), onclick: function () { move(x.steps, si, -1); renderSteps(); }}),
+        el("button", {class: "small", text: "↓", title: t("down"), onclick: function () { move(x.steps, si, 1); renderSteps(); }}),
+        el("button", {class: "small danger", text: "×", title: t("remove"), onclick: function () { x.steps.splice(si, 1); renderSteps(); }})]));
+      box.appendChild(el("label", {text: t("text")})); box.appendChild(text);
+
+      var prog = el("select");
+      prog.appendChild(el("option", {value: "", text: t("noMachine")}));
+      (INFO.programs || []).forEach(function (p) { prog.appendChild(el("option", {value: p.key, text: p.label})); });
+      prog.value = s.machine ? s.machine.program : "";
+      var mach = el("div", {class: "mach"});
+      function renderMach() {
+        mach.innerHTML = "";
+        var mc = s.machine; if (!mc) return;
+        function numIn(label, k, attrs) {
+          var i = el("input", Object.assign({type: "number", value: mc[k] || 0}, attrs || {}));
+          i.addEventListener("input", function () { mc[k] = num(i.value); });
+          return el("div", {}, [el("label", {text: label}), i]);
+        }
+        var pk = mc.program;
+        if (pk === "turbo") { mach.appendChild(numIn(t("pulses"), "pulses", {min: 0, max: 20})); }
+        else mach.appendChild(numIn(t("seconds"), "seconds", {min: 0, step: 5}));
+        if (pk === "manuel") {
+          mach.appendChild(numIn(t("speed"), "speed", {min: 0, max: INFO.maxSpeed || 10}));
+          var temp = el("select");
+          temp.appendChild(el("option", {value: 0, text: t("noHeat")}));
+          (INFO.temperatures || []).forEach(function (c) { temp.appendChild(el("option", {value: c, text: c + " °C"})); });
+          temp.value = mc.tempC || 0;
+          temp.addEventListener("change", function () { mc.tempC = num(temp.value); });
+          mach.appendChild(el("div", {}, [el("label", {text: t("temp")}), temp]));
+          var acc = el("select");
+          (INFO.accessories || []).forEach(function (a) { acc.appendChild(el("option", {value: a.key, text: a.label})); });
+          acc.value = mc.accessory || "blade";
+          acc.addEventListener("change", function () { mc.accessory = acc.value; });
+          mach.appendChild(el("div", {}, [el("label", {text: t("accessory")}), acc]));
+          if (INFO.reverse) {
+            var rev = el("input", {type: "checkbox", style: "width:auto"}); rev.checked = !!mc.reverse;
+            rev.addEventListener("change", function () { mc.reverse = rev.checked; });
+            mach.appendChild(el("div", {}, [el("label", {}, [rev, " " + t("reverse")])]));
+          }
+        } else if ((INFO.programs.filter(function (p) { return p.key === pk; })[0] || {}).heated) {
+          mach.appendChild(numIn(t("temp") + " (°C)", "tempC", {min: 0, max: 130}));
+        }
+      }
+      prog.addEventListener("change", function () {
+        s.machine = prog.value ? Object.assign({seconds: 60, speed: 2, tempC: 0, reverse: false, accessory: "blade", pulses: 0}, s.machine || {}, {program: prog.value}) : null;
+        if (!s.machine) delete s.machine;
+        renderMach();
+      });
+      box.appendChild(el("label", {text: t("machine")})); box.appendChild(prog); box.appendChild(mach);
+      renderMach();
+
+      var wg = el("input", {type: "number", min: 0, value: s.weigh ? s.weigh.grams : ""});
+      var wl = el("input", {type: "text", value: s.weigh ? s.weigh.label : ""});
+      function setW() { var g = num(wg.value); if (g > 0) s.weigh = {label: wl.value, grams: g}; else delete s.weigh; }
+      wg.addEventListener("input", setW); wl.addEventListener("input", setW);
+      box.appendChild(el("div", {class: "grid"}, [el("div", {}, [el("label", {text: t("weigh")}), wg]), el("div", {}, [el("label", {text: t("weighLabel")}), wl])]));
+      stepCard.appendChild(box);
+    });
+    stepCard.appendChild(el("button", {class: "small", text: "+ " + t("addStep"), onclick: function () { x.steps.push({text: ""}); renderSteps(); }}));
+  }
+  renderIng(); renderSteps();
+
+  // JSON brut (pour coller une recette préparée ailleurs)
+  var json = el("textarea", {style: "min-height:160px;font-family:monospace;font-size:13px"});
+  var jsonBox = el("details", {class: "card"}, [el("summary", {text: t("jsonEdit")}), json,
+    el("p", {}, [el("button", {class: "small", text: "↻", onclick: function () {
+      try { var y = JSON.parse(json.value); for (var k in x) delete x[k]; Object.assign(x, y); form(id, x); } catch (e) { toast(e.message, true); }
+    }})])]);
+  jsonBox.addEventListener("toggle", function () { if (jsonBox.open) json.value = JSON.stringify(clean(x), null, 2); });
+  $m.appendChild(jsonBox);
+
+  var save = el("button", {class: "primary", text: t("save"), onclick: function () {
+    save.disabled = true;
+    var body = clean(x);
+    (id ? api("PUT", "/api/recipes/" + encodeURIComponent(id), body) : api("POST", "/api/recipes", body)).then(function (r) {
+      toast(t("saved")); go("#r/" + encodeURIComponent(r.data.id));
+    }).catch(fail).then(function () { save.disabled = false; });
+  }});
+  $m.appendChild(el("div", {class: "row"}, [save, el("button", {text: t("cancel"), onclick: function () { go(id ? "#r/" + encodeURIComponent(id) : "#"); }})]));
+}
+
+function clean(x) {
+  var y = JSON.parse(JSON.stringify(x));
+  delete y.kind; delete y.editable;
+  y.ingredients = (y.ingredients || []).map(function (g) {
+    return {group: g.group || "", items: (g.items || []).filter(function (i) { return (i.name || "").trim(); })};
+  }).filter(function (g) { return g.items.length; });
+  y.steps = (y.steps || []).filter(function (s) { return (s.text || "").trim() || s.machine; });
+  return y;
+}
+
+// ---------------------------------------------------------------- réglages
+function settings() {
+  header(t("settings"), [el("button", {class: "small", text: t("back"), onclick: function () { go("#"); }})]);
+  clear();
+  var bringCard = el("div", {class: "card"}, [el("h3", {text: t("bringSettings"), style: "margin-top:0"})]);
+  $m.appendChild(bringCard);
+  function renderBring(st) {
+    while (bringCard.childNodes.length > 1) bringCard.removeChild(bringCard.lastChild);
+    bringCard.appendChild(el("p", {class: "muted", text: t("bringHelp")}));
+    if (st.linked) {
+      bringCard.appendChild(el("p", {text: t("bringLinked") + " · " + st.email}));
+      var sel = el("select");
+      (st.lists || []).forEach(function (l) { sel.appendChild(el("option", {value: l.uuid, text: l.name})); });
+      sel.value = st.listUuid;
+      sel.addEventListener("change", function () { api("POST", "/api/bring/list", {uuid: sel.value}).then(function (r) { renderBring(r.data); toast(t("saved")); }).catch(fail); });
+      bringCard.appendChild(el("label", {text: t("bringList")})); bringCard.appendChild(sel);
+      bringCard.appendChild(el("p", {}, [el("button", {class: "danger", text: t("bringUnlink"), onclick: function () {
+        api("POST", "/api/bring/logout").then(function (r) { renderBring(r.data); }).catch(fail);
+      }})]));
+    } else {
+      var mail = el("input", {type: "email", autocomplete: "username"});
+      var pw = el("input", {type: "password", autocomplete: "current-password"});
+      var btn = el("button", {class: "primary", text: t("bringLink"), onclick: function () {
+        btn.disabled = true;
+        api("POST", "/api/bring/login", {email: mail.value, password: pw.value}).then(function (r) { pw.value = ""; renderBring(r.data); })
+          .catch(fail).then(function () { btn.disabled = false; });
+      }});
+      [el("label", {text: t("bringEmail")}), mail, el("label", {text: t("bringPassword")}), pw, el("p", {}, [btn])].forEach(function (n) { bringCard.appendChild(n); });
+    }
+  }
+  if (INFO.bring) api("GET", "/api/bring").then(function (r) { renderBring(r.data); }).catch(fail);
+
+  var file = el("input", {type: "file", accept: ".json,application/json"});
+  file.addEventListener("change", function () {
+    var f = file.files[0]; if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      api("POST", "/api/import", rd.result, true).then(function (r) {
+        toast("✓ " + r.data.imported.length + (r.data.problems.length ? " · ✗ " + r.data.problems.length : ""));
+        if (r.data.problems.length) alert(r.data.problems.join("\n"));
+      }).catch(function (e) {
+        if (e.data && e.data.problems) alert(e.data.problems.join("\n")); else fail(e);
+      });
+    };
+    rd.readAsText(f);
+  });
+  $m.appendChild(el("div", {class: "card"}, [
+    el("h3", {text: t("importFile"), style: "margin-top:0"}), el("p", {class: "muted", text: t("fileHelp")}), file,
+    el("p", {}, [el("button", {text: t("exportFile"), onclick: function () {
+      api("GET", "/api/export").then(function (r) {
+        var a = el("a", {href: URL.createObjectURL(new Blob([r.text], {type: "application/json"})), download: "toque-mes-recettes.json"});
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      }).catch(fail);
+    }})])
+  ]));
+  $m.appendChild(el("div", {class: "card"}, [
+    el("p", {class: "muted", text: "Toque " + (INFO.version || "") + " · " + (INFO.robot ? INFO.robot.name : "")}),
+    el("button", {text: t("logout"), onclick: function () { store("toqueKey", null); KEY = ""; INFO = null; login(); }})
+  ]));
+}
+
+start();
+</script>
+</body>
+</html>

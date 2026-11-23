@@ -430,4 +430,36 @@ class Prefs(context: Context) {
     fun forgetSite() {
         p.edit().remove("siteToken").remove("siteUser").remove("sitePendingFavorites").commit()
     }
+
+    // ---- Serveur de recettes (navigateur du réseau local) et liste de courses Bring!
+
+    /** Serveur de recettes allumé (il s'arrête tout seul pendant une cuisson). */
+    var webServer: Boolean
+        get() = p.getBoolean("webServer", false)
+        set(v) {
+            p.edit().putBoolean("webServer", v).commit()
+        }
+
+    /** Clé d'accès au serveur de recettes (créée au premier allumage). */
+    var webKey: String
+        get() = p.getString("webKey", "") ?: ""
+        set(v) {
+            p.edit().putString("webKey", v).commit()
+        }
+
+    var webPort: Int
+        get() = p.getInt("webPort", 8080)
+        set(v) {
+            p.edit().putInt("webPort", v).commit()
+        }
+
+    /** Compte Bring! relié : identifiant, jetons (jamais le mot de passe), liste choisie. */
+    var bring: Map<String, String>
+        get() = (p.getString("bring", "") ?: "").split('\n').mapNotNull { line ->
+            val i = line.indexOf('=')
+            if (i <= 0) null else line.substring(0, i) to line.substring(i + 1)
+        }.toMap()
+        set(v) {
+            p.edit().putString("bring", v.entries.joinToString("\n") { "${it.key}=${it.value.replace('\n', ' ')}" }).commit()
+        }
 }

@@ -61,6 +61,8 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
     private var release: Release? = null
     private var updMessage = ""
     private lateinit var accountText: TextView
+    private lateinit var webText: TextView
+    private lateinit var bringText: TextView
     private lateinit var accountButtons: LinearLayout
     private lateinit var siteText: TextView
     private lateinit var siteBtn: View
@@ -243,6 +245,27 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         files.addView(Ui.button(c, tr("Exporter"), Ui.Style.SECONDARY, Icon.Kind.UPLOAD, height = 52) { recipeFiles(export = true) }, Ui.lp(Ui.WRAP, Ui.WRAP, r = 10))
         files.addView(Ui.button(c, tr("Importer"), Ui.Style.SECONDARY, Icon.Kind.DOWNLOAD, height = 52) { recipeFiles(export = false) })
         mine.addView(files, Ui.lp(t = 12))
+
+        // ---- Serveur de recettes (navigateur du réseau local)
+        val web = section(right, tr("Serveur de recettes"), Icon.Kind.GLOBE)
+        web.addView(Ui.text(c, tr("Écrivez et modifiez vos recettes depuis le navigateur d'un ordinateur ou d'un téléphone du même Wi-Fi. Le serveur s'arrête pendant chaque cuisson et ne pilote jamais la machine."),
+            16f, Ui.TEXT2).apply { setLineSpacing(0f, 1.15f) })
+        web.addView(toggle(tr("Serveur de recettes allumé"), a.prefs.webServer) { on ->
+            a.app.webServer.setEnabled(on)
+            renderWeb()
+        }, Ui.lp(t = 10))
+        webText = Ui.text(c, "", 16f, Ui.TEXT).apply { setLineSpacing(0f, 1.15f) }
+        web.addView(webText, Ui.lp(t = 10))
+        val webButtons = Ui.horizontal(c)
+        webButtons.addView(Ui.button(c, tr("Code QR"), Ui.Style.SECONDARY, Icon.Kind.LINK, height = 52) { showQr() }, Ui.lp(Ui.WRAP, Ui.WRAP, r = 10))
+        webButtons.addView(Ui.button(c, tr("Nouvelle clé"), Ui.Style.SECONDARY, Icon.Kind.SYNC, height = 52) {
+            a.app.webServer.newKey()
+            a.toast(tr("Nouvelle clé : les navigateurs reliés doivent scanner le nouveau code"))
+            renderWeb()
+        }, Ui.lp(Ui.WRAP, Ui.WRAP))
+        web.addView(webButtons, Ui.lp(t = 12))
+        bringText = Ui.text(c, "", 15f, Ui.TEXT3).apply { setLineSpacing(0f, 1.1f) }
+        web.addView(bringText, Ui.lp(t = 12))
 
         // ---- Compte Toque (toqueapp.org), facultatif
         val account = section(left, tr("Compte Toque"), Icon.Kind.PEOPLE)
@@ -736,6 +759,8 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         unsubRecipes = a.app.recipes.onChange { renderRobot(); refreshSync(); refreshSite() }
         unsubSync = SyncProgress.onChange { refreshSync() }
         unsubSite = a.app.site.onChange { renderAccount(); refreshSite() }
+        renderWeb()
+        unsubWeb = a.app.webServer.onChange { renderWeb() }
     }
 
     override fun onHide() {
@@ -745,6 +770,54 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         unsubSync = null
         unsubSite?.invoke()
         unsubSite = null
+        unsubWeb?.invoke()
+        unsubWeb = null
+    }
+
+    private var unsubWeb: (() -> Unit)? = null
+
+    private fun renderWeb() {
+        val server = a.app.webServer
+        val url = server.url(withKey = false)
+        webText.text = when {
+            server.running && url != null -> tr("En marche : %s", url)
+            server.running -> tr("En marche, mais le robot n'est relié à aucun Wi-Fi")
+            else -> server.reason ?: tr("Arrêté")
+        }
+        bringText.text = if (server.bring.linked) tr("Bring! relié · liste « %s ». À délier depuis la page web (Réglages).", server.bring.listName)
+        else tr("Bring! : reliez votre compte depuis la page web (Réglages) pour envoyer les ingrédients sur votre liste de courses.")
+    }
+
+    /** Le code QR : adresse et clé, à scanner avec un téléphone (ou à photographier pour un assistant). */
+    private fun showQr() {
+        val server = a.app.webServer
+        if (!a.prefs.webServer) { a.toast(tr("Allumez d'abord le serveur de recettes"), Ui.WARN); return }
+        val url = server.url(withKey = true)
+        if (url == null) { a.toast(tr("Le robot n'est relié à aucun Wi-Fi"), Ui.WARN); return }
+        val qr = app.toque.core.web.Qr.encode(url)
+        val margin = 4
+        val n = qr.size + margin * 2
+        val bmp = android.graphics.Bitmap.createBitmap(n, n, android.graphics.Bitmap.Config.ARGB_8888)
+        for (y in 0 until n) for (x in 0 until n) {
+            val qx = x - margin
+            val qy = y - margin
+            val dark = qx in 0 until qr.size && qy in 0 until qr.size && qr[qx, qy]
+            bmp.setPixel(x, y, if (dark) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+        }
+        val card = Ui.card(a, 28f, Ui.SURFACE2)
+        card.setPadding(Ui.u(28), Ui.u(24), Ui.u(28), Ui.u(22))
+        card.addView(Ui.text(a, tr("Serveur de recettes"), 24f, Ui.TEXT, Ui.MEDIUM))
+        card.addView(Ui.text(a, tr("Scannez ce code avec le téléphone : la page s'ouvre déjà connectée. La clé donne accès à vos recettes : ne montrez ce code qu'à qui vous voulez."),
+            16f, Ui.TEXT2).apply { setLineSpacing(0f, 1.15f) }, Ui.lp(t = 8, b = 14))
+        val image = android.widget.ImageView(a).apply {
+            setImageDrawable(android.graphics.drawable.BitmapDrawable(a.resources, bmp).apply { setFilterBitmap(false); setAntiAlias(false) })
+            scaleType = android.widget.ImageView.ScaleType.FIT_CENTER
+        }
+        card.addView(image, LinearLayout.LayoutParams(Ui.u(300), Ui.u(300)).apply { gravity = Gravity.CENTER_HORIZONTAL })
+        card.addView(Ui.text(a, server.url(withKey = false) ?: "", 18f, Ui.TEXT, Ui.MEDIUM).apply { gravity = Gravity.CENTER }, Ui.lp(t = 12))
+        card.addView(Ui.text(a, tr("Clé : %s", a.prefs.webKey), 16f, Ui.TEXT2).apply { gravity = Gravity.CENTER; setTextIsSelectable(true) }, Ui.lp(t = 4))
+        card.addView(Ui.button(a, tr("Fermer"), Ui.Style.SECONDARY, height = 52) { a.closeOverlay() }, Ui.lp(Ui.WRAP, Ui.WRAP, t = 16).apply { gravity = Gravity.END })
+        a.showOverlay(card, 560)
     }
 
     override fun onSnapshot(s: Snapshot) {

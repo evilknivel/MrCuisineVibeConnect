@@ -115,6 +115,12 @@ class RecipeScreen(a: MainActivity, val recipe: Recipe) : Screen(a) {
         val edit = Ui.button(c, "", Ui.Style.SECONDARY, Icon.Kind.EDIT, height = 66) { if (mine) editMine() else makeMyVersion() }
         edit.contentDescription = if (mine) tr("Modifier la recette") else tr("Ma version")
         actions.addView(edit, Ui.lp(Ui.WRAP, Ui.WRAP, r = 12))
+        // Compte Bring! relié (page web du serveur de recettes) : les ingrédients sur la liste de courses.
+        if (a.app.webServer.bring.linked && shown.allIngredients.isNotEmpty()) {
+            val bring = Ui.button(c, "Bring!", Ui.Style.SECONDARY, height = 66, textSize = 18f) { toBring() }
+            bring.contentDescription = tr("Mettre sur la liste Bring!")
+            actions.addView(bring, Ui.lp(Ui.WRAP, Ui.WRAP, r = 12))
+        }
         actions.addView(fav)
         left.addView(actions, Ui.lp(t = 14))
 
@@ -146,6 +152,22 @@ class RecipeScreen(a: MainActivity, val recipe: Recipe) : Screen(a) {
     // ------------------------------------------------------------------ note et quantités adaptées
 
     private var servingsChip: LinearLayout? = null
+
+    /** Ingrédients affichés (nombre de personnes choisi) sur la liste Bring!, hors du fil de l'interface. */
+    private fun toBring() {
+        val items = app.toque.core.web.BringItems.of(shown)
+        Thread {
+            val error = try {
+                a.app.webServer.bring.add(items); null
+            } catch (e: Exception) {
+                e.message ?: e.toString()
+            }
+            view.post {
+                if (error == null) a.toast(tr("%d articles sur la liste Bring! « %s »", items.size, a.app.webServer.bring.listName), Ui.OK)
+                else a.toast(error, Ui.WARN)
+            }
+        }.start()
+    }
 
     private fun renderIngredients() {
         val ing = ingredientsBox

@@ -24,6 +24,8 @@ class ToqueApp : Application() {
     val recipes: RecipeRepo by lazy { RecipeRepo(this) }
     /** toqueapp.org : compte relié, recettes de la communauté. */
     val site: app.toque.site.SiteAccount by lazy { app.toque.site.SiteAccount(this) }
+    /** Serveur de recettes du réseau local (navigateur, assistant) et compte Bring!. */
+    val webServer: app.toque.web.RecipeServer by lazy { app.toque.web.RecipeServer(this) }
 
     override fun onCreate() {
         super.onCreate()

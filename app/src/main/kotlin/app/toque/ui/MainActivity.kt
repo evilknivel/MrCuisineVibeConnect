@@ -104,6 +104,7 @@ class MainActivity : Activity() {
 
         app.machine.connect()
         app.recipes.load()
+        app.webServer.attach()
         SyncService.schedule(this)
         push(HomeScreen(this))
         if (reopenSettings) {
@@ -353,6 +354,8 @@ class MainActivity : Activity() {
         (v.parent as? FrameLayout)?.removeView(v)
         content.addView(v, Ui.flp())
         topBar.setTitle(s.title, stack.size > 1)
+        // Le serveur de recettes reste arrêté tant que la cuisson guidée est ouverte.
+        app.webServer.cooking = stack.any { it is app.toque.ui.screens.CookScreen }
         s.onShow()
         s.onSnapshot(snapshot)
     }
