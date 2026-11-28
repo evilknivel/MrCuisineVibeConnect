@@ -26,6 +26,8 @@ class ToqueApp : Application() {
     val site: app.toque.site.SiteAccount by lazy { app.toque.site.SiteAccount(this) }
     /** Serveur de recettes du réseau local (navigateur, assistant) et compte Bring!. */
     val webServer: app.toque.web.RecipeServer by lazy { app.toque.web.RecipeServer(this) }
+    /** Code de protection des réglages de sécurité (essais, déverrouillage de 5 min). */
+    val pinLock = app.toque.core.machine.PinLock()
 
     override fun onCreate() {
         super.onCreate()

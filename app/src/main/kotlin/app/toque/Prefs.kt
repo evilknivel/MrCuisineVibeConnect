@@ -462,4 +462,11 @@ class Prefs(context: Context) {
         set(v) {
             p.edit().putString("bring", v.entries.joinToString("\n") { "${it.key}=${it.value.replace('\n', ' ')}" }).commit()
         }
+
+    /** Code de protection des réglages de sécurité : sel et empreinte (jamais le code), vides sans code. */
+    var pin: app.toque.core.machine.PinLock.Stored
+        get() = app.toque.core.machine.PinLock.Stored(p.getString("pinSalt", "") ?: "", p.getString("pinHash", "") ?: "")
+        set(v) {
+            p.edit().putString("pinSalt", v.salt).putString("pinHash", v.hash).commit()
+        }
 }

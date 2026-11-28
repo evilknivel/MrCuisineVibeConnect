@@ -794,5 +794,21 @@
   "Connexion Bring! expirée : reliez le compte à nouveau": "Вхід у Bring! застарів: під'єднайте обліковий запис знову",
   "Réponse de Bring! illisible": "Нечитабельна відповідь від Bring!",
   "Liste Bring! inconnue": "Невідомий список Bring!",
-  "Démarrage impossible : %s": "Не вдається запустити: %s"
+  "Démarrage impossible : %s": "Не вдається запустити: %s",
+  "Code de protection": "Код захисту",
+  "Ce réglage touche à la sécurité. Tapez le code de protection.": "Це налаштування стосується безпеки. Введіть код захисту.",
+  "Code faux": "Неправильний код",
+  "Trop d'essais : attendez %d min": "Забагато спроб: зачекайте %d хв",
+  "Nouveau code": "Новий код",
+  "De %d à %d chiffres.": "Від %d до %d цифр.",
+  "Tapez-le une seconde fois.": "Введіть його ще раз.",
+  "Les deux codes sont différents": "Коди не збігаються",
+  "Code de protection enregistré": "Код захисту збережено",
+  "Code de protection retiré": "Код захисту видалено",
+  "Facultatif. Avec un code, les réglages de sécurité (capteur du bol, montée progressive, enchaînement, mode machine, robot, serveur de recettes, appli d'origine, paramètres Android) ne changent qu'après l'avoir tapé. Le code reste ouvert 5 minutes dans les réglages.": "Необов'язково. З кодом налаштування безпеки (датчик чаші, плавний розгін, ланцюжок кроків, режим машини, робот, сервер рецептів, оригінальний застосунок, налаштування Android) змінюються лише після його введення. Після введення вони лишаються відкритими 5 хвилин.",
+  "Code défini : les réglages de sécurité sont protégés.": "Код задано: налаштування безпеки захищені.",
+  "Aucun code : tout le monde peut changer les réglages de sécurité.": "Без коду: будь-хто може змінити налаштування безпеки.",
+  "Changer le code": "Змінити код",
+  "Définir un code": "Задати код",
+  "Retirer le code": "Видалити код"
 }

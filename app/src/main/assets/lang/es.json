@@ -794,5 +794,21 @@
   "Connexion Bring! expirée : reliez le compte à nouveau": "Sesión de Bring! caducada: vuelva a vincular la cuenta",
   "Réponse de Bring! illisible": "Respuesta de Bring! ilegible",
   "Liste Bring! inconnue": "Lista Bring! desconocida",
-  "Démarrage impossible : %s": "No se puede iniciar: %s"
+  "Démarrage impossible : %s": "No se puede iniciar: %s",
+  "Code de protection": "Código de protección",
+  "Ce réglage touche à la sécurité. Tapez le code de protection.": "Este ajuste afecta a la seguridad. Escriba el código de protección.",
+  "Code faux": "Código incorrecto",
+  "Trop d'essais : attendez %d min": "Demasiados intentos: espere %d min",
+  "Nouveau code": "Código nuevo",
+  "De %d à %d chiffres.": "De %d a %d cifras.",
+  "Tapez-le une seconde fois.": "Escríbalo una segunda vez.",
+  "Les deux codes sont différents": "Los dos códigos son distintos",
+  "Code de protection enregistré": "Código de protección guardado",
+  "Code de protection retiré": "Código de protección eliminado",
+  "Facultatif. Avec un code, les réglages de sécurité (capteur du bol, montée progressive, enchaînement, mode machine, robot, serveur de recettes, appli d'origine, paramètres Android) ne changent qu'après l'avoir tapé. Le code reste ouvert 5 minutes dans les réglages.": "Opcional. Con un código, los ajustes de seguridad (sensor del vaso, aceleración progresiva, encadenar pasos, modo de máquina, robot, servidor de recetas, app original, ajustes de Android) solo cambian tras escribirlo. Una vez escrito, queda abierto 5 minutos en los ajustes.",
+  "Code défini : les réglages de sécurité sont protégés.": "Código definido: los ajustes de seguridad están protegidos.",
+  "Aucun code : tout le monde peut changer les réglages de sécurité.": "Sin código: cualquiera puede cambiar los ajustes de seguridad.",
+  "Changer le code": "Cambiar el código",
+  "Définir un code": "Definir un código",
+  "Retirer le code": "Quitar el código"
 }

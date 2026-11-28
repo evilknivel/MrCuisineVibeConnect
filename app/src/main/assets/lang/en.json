@@ -794,5 +794,21 @@
   "Connexion Bring! expirée : reliez le compte à nouveau": "Bring! login expired: link the account again",
   "Réponse de Bring! illisible": "Unreadable reply from Bring!",
   "Liste Bring! inconnue": "Unknown Bring! list",
-  "Démarrage impossible : %s": "Cannot start: %s"
+  "Démarrage impossible : %s": "Cannot start: %s",
+  "Code de protection": "Protection code",
+  "Ce réglage touche à la sécurité. Tapez le code de protection.": "This setting affects safety. Enter the protection code.",
+  "Code faux": "Wrong code",
+  "Trop d'essais : attendez %d min": "Too many attempts: wait %d min",
+  "Nouveau code": "New code",
+  "De %d à %d chiffres.": "%d to %d digits.",
+  "Tapez-le une seconde fois.": "Enter it a second time.",
+  "Les deux codes sont différents": "The two codes are different",
+  "Code de protection enregistré": "Protection code saved",
+  "Code de protection retiré": "Protection code removed",
+  "Facultatif. Avec un code, les réglages de sécurité (capteur du bol, montée progressive, enchaînement, mode machine, robot, serveur de recettes, appli d'origine, paramètres Android) ne changent qu'après l'avoir tapé. Le code reste ouvert 5 minutes dans les réglages.": "Optional. With a code, the safety settings (bowl sensor, gradual speed-up, step chaining, machine mode, robot, recipe server, stock app, Android settings) only change after it has been entered. Once entered, it stays open for 5 minutes in Settings.",
+  "Code défini : les réglages de sécurité sont protégés.": "Code set: the safety settings are protected.",
+  "Aucun code : tout le monde peut changer les réglages de sécurité.": "No code: anyone can change the safety settings.",
+  "Changer le code": "Change the code",
+  "Définir un code": "Set a code",
+  "Retirer le code": "Remove the code"
 }

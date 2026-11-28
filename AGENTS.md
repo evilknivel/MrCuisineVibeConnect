@@ -276,6 +276,7 @@ Undo: Toque › Settings › Tools › *Back to the stock app* (it re-enables th
 | Magisk app: *Requires additional setup*, then *reinstall Magisk… recovery mode cannot get device info* | Magisk app's own check, harmless here | Accept a reboot if offered; **never** use *Direct install* (it rewrites `boot`). Back out of the install screen |
 | Toque says "bowl not detected" with the bowl in place, and "detected" without it | The bowl sensor is reversed on many robots (B2, C3, SKMC 1100) | Settings › Safety › **Invert the bowl sensor**; check *Settings › Tools › Diagnostics*, then enable *Require bowl detection* |
 | The rotary knob does nothing | Knob keys not set up | Tap the *Rotary knob not set up* pill on Home and follow the 3 steps |
+| Settings asks for a protection code nobody remembers | A protection code was set (Settings › Protection code) | With root over ADB: `adb shell "su -c 'sed -i /pinSalt/d\;/pinHash/d /data/data/app.toque/shared_prefs/toque.xml'"`, then `adb shell am force-stop app.toque` and start Toque again |
 | Scale shows "overload · 0 g" right after the install | The robot was resting on the cable or the open cover | Put the robot flat on its feet with nothing under it, screw the cover back, restart it |
 
 ## Undo (Connect)

@@ -30,6 +30,7 @@ import app.toque.core.recipes.CommunityRecipes
 import app.toque.core.recipes.UserRecipes
 import app.toque.ui.Icon
 import app.toque.ui.MainActivity
+import app.toque.ui.PinGate
 import app.toque.ui.Screen
 import app.toque.ui.Sounds
 import app.toque.ui.Ui
@@ -62,6 +63,8 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
     private var updMessage = ""
     private lateinit var accountText: TextView
     private lateinit var webText: TextView
+    private lateinit var pinText: TextView
+    private lateinit var pinButtons: LinearLayout
     private lateinit var bringText: TextView
     private lateinit var accountButtons: LinearLayout
     private lateinit var siteText: TextView
@@ -81,7 +84,7 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         val robot = section(left, tr("Robot"), Icon.Kind.POT)
         robotText = Ui.text(c, "", 18f, Ui.TEXT).apply { setLineSpacing(0f, 1.15f) }
         robot.addView(robotText, Ui.lp(t = 4))
-        robot.addView(Ui.button(c, tr("Changer de robot"), Ui.Style.SECONDARY, height = 52) { a.askRobot() }, Ui.lp(Ui.WRAP, Ui.WRAP, t = 10))
+        robot.addView(Ui.button(c, tr("Changer de robot"), Ui.Style.SECONDARY, height = 52) { PinGate.require(a) { a.askRobot() } }, Ui.lp(Ui.WRAP, Ui.WRAP, t = 10))
         renderRobot()
 
         // ---- Machine
@@ -96,30 +99,30 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         machine.addView(twinBox, Ui.lp(t = 12))
         linkText = Ui.text(c, "", 16f, Ui.TEXT2).apply { setLineSpacing(0f, 1.15f) }
         machine.addView(linkText, Ui.lp(t = 12))
-        machine.addView(Ui.button(c, tr("Appliquer"), Ui.Style.PRIMARY, Icon.Kind.CHECK, height = 58) { applyMode() }, Ui.lp(Ui.WRAP, Ui.WRAP, t = 14))
+        machine.addView(Ui.button(c, tr("Appliquer"), Ui.Style.PRIMARY, Icon.Kind.CHECK, height = 58) { PinGate.require(a) { applyMode() } }, Ui.lp(Ui.WRAP, Ui.WRAP, t = 14))
         renderModes()
 
         // ---- Sécurité
         val safety = section(left, tr("Sécurité"), Icon.Kind.WARNING)
-        safety.addView(toggle(tr("Exiger la détection du bol"), a.prefs.requireBowl) { on ->
+        safety.addView(toggle(tr("Exiger la détection du bol"), a.prefs.requireBowl, guarded = true) { on ->
             a.prefs.requireBowl = on
             a.machine.reconfigure { a.refusal(it) }
         })
         bowlText = Ui.text(c, "", 15f, Ui.TEXT3).apply { setLineSpacing(0f, 1.1f) }
         safety.addView(bowlText, Ui.lp(t = 6))
-        safety.addView(toggle(tr("Inverser le capteur du bol"), a.prefs.invertBowl) { on ->
+        safety.addView(toggle(tr("Inverser le capteur du bol"), a.prefs.invertBowl, guarded = true) { on ->
             a.prefs.invertBowl = on
             a.machine.reconfigure { a.refusal(it) }
         }, Ui.lp(t = 10))
         safety.addView(Ui.text(c, tr("À activer si le capteur indique « bol détecté » quand le bol est retiré, et l'inverse quand il est en place."),
             15f, Ui.TEXT3).apply { setLineSpacing(0f, 1.1f) }, Ui.lp(t = 6))
-        safety.addView(toggle(tr("Montée progressive de la vitesse si le contenu est chaud"), a.prefs.hotRamp) { on ->
+        safety.addView(toggle(tr("Montée progressive de la vitesse si le contenu est chaud"), a.prefs.hotRamp, guarded = true) { on ->
             a.prefs.hotRamp = on
             a.machine.reconfigure { a.refusal(it) }
         }, Ui.lp(t = 10))
         safety.addView(Ui.text(c, tr("À partir de 60 °C, la lame atteint sa vitesse en 2 à 3 secondes pour éviter les projections. À froid, elle y va directement."),
             15f, Ui.TEXT3).apply { setLineSpacing(0f, 1.1f) }, Ui.lp(t = 6))
-        safety.addView(toggle(tr("Enchaîner les étapes machine des recettes"), a.prefs.chainSteps) { a.prefs.chainSteps = it }, Ui.lp(t = 10))
+        safety.addView(toggle(tr("Enchaîner les étapes machine des recettes"), a.prefs.chainSteps, guarded = true) { a.prefs.chainSteps = it }, Ui.lp(t = 10))
         safety.addView(Ui.text(c, tr("Les réglages qui se suivent sans geste à faire entre eux partent ensemble d'un seul appui sur Lancer : la lame passe directement à la vitesse et à la température suivantes."),
             15f, Ui.TEXT3).apply { setLineSpacing(0f, 1.1f) }, Ui.lp(t = 6))
         safety.addView(toggle(tr("Sons"), a.prefs.sound) { a.prefs.sound = it }, Ui.lp(t = 10))
@@ -128,6 +131,16 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
             a.prefs.weighSound = k
             Sounds.weighReached(k)
         }, Ui.lp(Ui.MATCH, Ui.u(58), t = 8))
+
+        // ---- Code de protection des réglages de sécurité (facultatif)
+        val protect = section(left, tr("Code de protection"), Icon.Kind.WARNING)
+        protect.addView(Ui.text(c, tr("Facultatif. Avec un code, les réglages de sécurité (capteur du bol, montée progressive, enchaînement, mode machine, robot, serveur de recettes, appli d'origine, paramètres Android) ne changent qu'après l'avoir tapé. Le code reste ouvert 5 minutes dans les réglages."),
+            16f, Ui.TEXT2).apply { setLineSpacing(0f, 1.15f) })
+        pinText = Ui.text(c, "", 16f, Ui.TEXT).apply { setLineSpacing(0f, 1.15f) }
+        protect.addView(pinText, Ui.lp(t = 10))
+        pinButtons = Ui.horizontal(c)
+        protect.addView(pinButtons, Ui.lp(t = 12))
+        renderPin()
 
         // ---- Langue (titre bilingue : trouvable quelle que soit la langue affichée)
         val language = section(right, "Langue · Language", Icon.Kind.INFO)
@@ -250,19 +263,19 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         val web = section(right, tr("Serveur de recettes"), Icon.Kind.GLOBE)
         web.addView(Ui.text(c, tr("Écrivez et modifiez vos recettes depuis le navigateur d'un ordinateur ou d'un téléphone du même Wi-Fi. Le serveur s'arrête pendant chaque cuisson et ne pilote jamais la machine."),
             16f, Ui.TEXT2).apply { setLineSpacing(0f, 1.15f) })
-        web.addView(toggle(tr("Serveur de recettes allumé"), a.prefs.webServer) { on ->
+        web.addView(toggle(tr("Serveur de recettes allumé"), a.prefs.webServer, guarded = true) { on ->
             a.app.webServer.setEnabled(on)
             renderWeb()
         }, Ui.lp(t = 10))
         webText = Ui.text(c, "", 16f, Ui.TEXT).apply { setLineSpacing(0f, 1.15f) }
         web.addView(webText, Ui.lp(t = 10))
         val webButtons = Ui.horizontal(c)
-        webButtons.addView(Ui.button(c, tr("Code QR"), Ui.Style.SECONDARY, Icon.Kind.LINK, height = 52) { showQr() }, Ui.lp(Ui.WRAP, Ui.WRAP, r = 10))
-        webButtons.addView(Ui.button(c, tr("Nouvelle clé"), Ui.Style.SECONDARY, Icon.Kind.SYNC, height = 52) {
+        webButtons.addView(Ui.button(c, tr("Code QR"), Ui.Style.SECONDARY, Icon.Kind.LINK, height = 52) { PinGate.require(a) { showQr() } }, Ui.lp(Ui.WRAP, Ui.WRAP, r = 10))
+        webButtons.addView(Ui.button(c, tr("Nouvelle clé"), Ui.Style.SECONDARY, Icon.Kind.SYNC, height = 52) { PinGate.require(a) {
             a.app.webServer.newKey()
             a.toast(tr("Nouvelle clé : les navigateurs reliés doivent scanner le nouveau code"))
             renderWeb()
-        }, Ui.lp(Ui.WRAP, Ui.WRAP))
+        } }, Ui.lp(Ui.WRAP, Ui.WRAP))
         web.addView(webButtons, Ui.lp(t = 12))
         bringText = Ui.text(c, "", 15f, Ui.TEXT3).apply { setLineSpacing(0f, 1.1f) }
         web.addView(bringText, Ui.lp(t = 12))
@@ -304,8 +317,8 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         tools.addView(link(tr("Diagnostic de la base moteur")) { a.push(DiagnosticsScreen(a)) })
         tools.addView(link(tr("Bouton rotatif")) { a.push(KnobScreen(a)) })
         tools.addView(link(tr("Journal")) { a.push(LogScreen(a)) })
-        tools.addView(link(tr("Paramètres Android")) { a.openAndroidSettings() })
-        tools.addView(link(tr("Revenir à l'appli d'origine")) { restoreVendor() })
+        tools.addView(link(tr("Paramètres Android")) { PinGate.require(a) { a.openAndroidSettings() } })
+        tools.addView(link(tr("Revenir à l'appli d'origine")) { PinGate.require(a) { restoreVendor() } })
         val version = try { a.packageManager.getPackageInfo(a.packageName, 0).versionName } catch (_: Exception) { "?" }
         tools.addView(Ui.text(c, tr("Toque %s · protocole d'après le Monsieur Cuisine Developer SDK (licence MIT). " +
             "Projet indépendant, non affilié à Lidl ni à SilverCrest.", version), 14f, Ui.TEXT3).apply { setLineSpacing(0f, 1.1f) }, Ui.lp(t = 12))
@@ -352,7 +365,8 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         setPadding(Ui.u(14), 0, Ui.u(14), 0)
     }
 
-    private fun toggle(label: String, initial: Boolean, onChange: (Boolean) -> Unit): LinearLayout {
+    /** [guarded] : réglage de sécurité, protégé par le code (s'il y en a un). */
+    private fun toggle(label: String, initial: Boolean, guarded: Boolean = false, onChange: (Boolean) -> Unit): LinearLayout {
         val row = Ui.horizontal(c)
         row.addView(Ui.text(c, label, 18f, Ui.TEXT), LinearLayout.LayoutParams(0, Ui.WRAP, 1f))
         var state = initial
@@ -370,7 +384,8 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
             sw.contentDescription = if (state) tr("Oui") else tr("Non")
         }
         paint()
-        val flip = { _: View -> state = !state; paint(); onChange(state) }
+        val doFlip = { state = !state; paint(); onChange(state) }
+        val flip = { _: View -> if (guarded) PinGate.require(a) { doFlip() } else doFlip() }
         sw.setOnClickListener(flip)
         row.setOnClickListener(flip)   // toute la ligne est touchable, pas seulement l'interrupteur
         row.minimumHeight = Ui.u(52)
@@ -772,9 +787,23 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         unsubSite = null
         unsubWeb?.invoke()
         unsubWeb = null
+        // En quittant les réglages, le code est redemandé la prochaine fois.
+        a.app.pinLock.relock()
     }
 
     private var unsubWeb: (() -> Unit)? = null
+
+    private fun renderPin() {
+        val set = a.prefs.pin.isSet
+        pinText.text = if (set) tr("Code défini : les réglages de sécurité sont protégés.") else tr("Aucun code : tout le monde peut changer les réglages de sécurité.")
+        pinButtons.removeAllViews()
+        pinButtons.addView(Ui.button(c, if (set) tr("Changer le code") else tr("Définir un code"), Ui.Style.SECONDARY, Icon.Kind.EDIT, height = 52) {
+            PinGate.set(a) { renderPin() }
+        }, Ui.lp(Ui.WRAP, Ui.WRAP, r = 10))
+        if (set) pinButtons.addView(Ui.button(c, tr("Retirer le code"), Ui.Style.GHOST, height = 52) {
+            PinGate.clear(a) { renderPin() }
+        }, Ui.lp(Ui.WRAP, Ui.WRAP))
+    }
 
     private fun renderWeb() {
         val server = a.app.webServer
